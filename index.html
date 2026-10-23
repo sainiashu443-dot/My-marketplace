@@ -1,0 +1,100 @@
+
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#111827">
+<title>My Marketplace</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:Arial,sans-serif;background:#f5f6fa;color:#172033}
+header{background:#111827;color:white;padding:20px 5%;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+header h1{margin:0;font-size:25px}
+button,input,select{font:inherit;padding:11px;border-radius:8px;border:1px solid #ddd}
+button{cursor:pointer;background:#2563eb;color:white;border:0}
+.hero{padding:35px 5%;background:#dbeafe}
+.hero h2{font-size:30px;margin:0 0 10px}
+main{padding:24px 5%}
+.tools{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:22px}
+.tools input{flex:1;min-width:180px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:16px}
+.card{background:white;padding:14px;border-radius:12px;box-shadow:0 2px 8px #0000000d}
+.product-image{height:125px;display:grid;place-items:center;background:#eef2ff;border-radius:9px;font-size:58px}
+.card h3{margin:12px 0 6px}
+.price{font-weight:bold;font-size:20px;margin:10px 0}
+.card button{width:100%;margin-top:6px}
+section{margin:28px 0}
+#cart{background:white;padding:18px;border-radius:12px}
+footer{text-align:center;padding:25px;color:#666}
+.small{font-size:13px;color:#666}
+</style>
+</head>
+<body>
+<header>
+<h1>🛍️ My Marketplace</h1>
+<button onclick="showCart()">🛒 Carrello (<span id="count">0</span>)</button>
+</header>
+<div class="hero">
+<h2>Trova quello che ami.</h2>
+<p>Scopri prodotti e offerte in un unico posto.</p>
+</div>
+<main>
+<div class="tools">
+<input id="search" placeholder="Cerca un prodotto..." oninput="render()">
+<select id="category" onchange="render()">
+<option value="">Tutte le categorie</option>
+<option>Elettronica</option>
+<option>Moda</option>
+<option>Casa</option>
+<option>Accessori</option>
+</select>
+</div>
+<h2>Esplora i prodotti</h2>
+<div class="grid" id="products"></div>
+<section id="cart">
+<h2>🛒 Il tuo carrello</h2>
+<div id="cartItems">Il carrello è vuoto.</div>
+<p>Totale: <strong id="total">€0,00</strong></p>
+<button onclick="checkout()">Ordina tramite WhatsApp</button>
+<p class="small">Ordini dimostrativi: configura il numero WhatsApp prima di usarli.</p>
+</section>
+</main>
+<footer>My Marketplace · Il tuo negozio online</footer>
+<script>
+const products=[
+{id:1,name:"Cuffie wireless",price:24.90,category:"Elettronica",emoji:"🎧"},
+{id:2,name:"Sneakers",price:39.90,category:"Moda",emoji:"👟"},
+{id:3,name:"Orologio",price:29.90,category:"Accessori",emoji:"⌚"},
+{id:4,name:"Lampada LED",price:19.90,category:"Casa",emoji:"💡"},
+{id:5,name:"Zaino",price:27.90,category:"Moda",emoji:"🎒"},
+{id:6,name:"Altoparlante",price:34.90,category:"Elettronica",emoji:"🔊"}
+];
+let cart=JSON.parse(localStorage.getItem("marketCart")||"[]");
+function euro(n){return n.toLocaleString("it-IT",{style:"currency",currency:"EUR"})}
+function render(){
+const q=document.getElementById("search").value.toLowerCase();
+const cat=document.getElementById("category").value;
+document.getElementById("products").innerHTML=products.filter(p=>p.name.toLowerCase().includes(q)&&(!cat||p.category===cat)).map(p=>`<article class="card"><div class="product-image">${p.emoji}</div><h3>${p.name}</h3><div class="small">${p.category}</div><p class="price">${euro(p.price)}</p><button onclick="add(${p.id})">Aggiungi al carrello</button></article>`).join("");
+updateCart();
+}
+function add(id){const item=cart.find(p=>p.id===id);if(item)item.qty++;else cart.push({id,qty:1});save()}
+function removeItem(id){cart=cart.filter(p=>p.id!==id);save()}
+function save(){localStorage.setItem("marketCart",JSON.stringify(cart));updateCart()}
+function updateCart(){
+document.getElementById("count").textContent=cart.reduce((s,p)=>s+p.qty,0);
+document.getElementById("cartItems").innerHTML=cart.length?cart.map(i=>{const p=products.find(x=>x.id===i.id);return `<p>${p.name} × ${i.qty} — ${euro(p.price*i.qty)} <button onclick="removeItem(${p.id})">Rimuovi</button></p>`}).join(""):"Il carrello è vuoto.";
+document.getElementById("total").textContent=euro(cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0));
+}
+function showCart(){document.getElementById("cart").scrollIntoView({behavior:"smooth"})}
+function checkout(){
+if(!cart.length){alert("Aggiungi prima un prodotto al carrello.");return}
+const phone="INSERISCI_NUMERO";
+if(phone==="INSERISCI_NUMERO"){alert("Il negozio è in prova. Prima di ricevere ordini devi configurare il numero WhatsApp.");return}
+const message="Ciao, vorrei ordinare:\n"+cart.map(i=>{const p=products.find(x=>x.id===i.id);return p.name+" x "+i.qty+" = "+euro(p.price*i.qty)}).join("\n")+"\nTotale: "+euro(cart.reduce((s,i)=>s+products.find(p=>p.id===i.id).price*i.qty,0));
+window.open("https://wa.me/"+phone+"?text="+encodeURIComponent(message),"_blank");
+}
+render();
+</script>
+</body>
+</html>
